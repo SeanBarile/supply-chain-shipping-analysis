@@ -15,13 +15,13 @@ An exploratory analysis of the DataCo Smart Supply Chain dataset, using SQL for 
 
 ## Question 1: Which shipping mode has the highest late-delivery rate?
 
-**Why this question?**
+**Why this question?:**
 Shipping mode reliability directly affects customer trust/satisfaction along with operational cost. I wanted to see whether faster, more expensive shipping options actually deliver on their promise.
 
-**Finding**
+**Finding:**
 First Class orders were late 95.3% of the time. This is by far the highest of any shipping mode. Second Class followed at 76.6%. Same Day was late 45.7% of the time, and Standard Class had the lowest rate at 38.1%.
 
-**Interpretation**
+**Interpretation:**
 Based on my own operations background, I suspected this was tied to delivery promise windows rather than handling quality. Faster shipping modes are usually held to stricter, tighter delivery windows, making the same real-world delays more likely to register as "late". I tested this by comparing scheduled vs. real shipping days:
 
 | Shipping Mode  | Scheduled (days) | Real (days) |
@@ -33,15 +33,15 @@ Based on my own operations background, I suspected this was tied to delivery pro
 
 This supported the hypothesis, but also surfaced something more specific: Second Class's actual shipping time (3.99 days) is nearly identical to Standard Class's (3.996 days), despite Second Class promising a much shorter window. This suggests Second Class orders may not be receiving meaningfully different handling than Standard Class. They are simply held to a faster promise on what looks like the same process.
 
-**Follow-up Finding**
+**Follow-up Finding:**
 I decided to dig deeper into the scheduled vs real comparison and found that it doesn't fully explain the late-delivery flag. Among First Class orders with identical values (1 day scheduled, 2 days real), 26,513 are flagged as late while 1,301 with the exact same day counts are not. This means 'Late_delivery_risk' isn't a simple comparison of these two columns. It is likely derived from something more granular, like actual order/shipping dates. I wasn't able to fully determine the exact mechanism with the fields available, but wanted to flag this discrepancy rather than present the day-count comparison as a complete explanation.
 
-**Data Quality Note**
+**Data Quality Note:**
 First Class's "Days for shipping (real)" column showed zero variance. Every order shows exactly 2 days, with no spread. Real operational data almost always has some variation, so it looked like possible synthetic data or rounded field rather than a direct measure.
 
 The follow up finding above supports this. Since, "Late_delivery_risk" has disagreeing rows with identical day-count values (26,513 late vs 1,301 not late, despite matching scheduled/real days), there must be some underlying variation. Likely in the actual order and shipping dates. I wasn't able to confirm this without checking actual date values directly, but the two findings together point in the same direction.
 
-**Dashboard** [View on Tableau Public](https://public.tableau.com/app/profile/sean.barile/viz/SupplyChainShippingModeAnalysis/Sheet1)
+**Dashboard:** [View on Tableau Public](https://public.tableau.com/app/profile/sean.barile/viz/SupplyChainShippingModeAnalysis/Sheet1)
 
 ## What's next?
 
