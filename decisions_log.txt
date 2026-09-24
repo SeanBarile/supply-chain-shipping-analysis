@@ -14,6 +14,7 @@ Based on my own operations background (15 years in fulfillment), I suspected thi
 
 Testing this by comparing scheduled vs. real shipping days. Results supported the hypothesis. First Class promises 1 day but takes 2, roughly double. But it also brought about something more specific: Second Class's real shipping time (3.99 days) nearly matches Standard Class's (3.996 days), despite Second Class promising a much shorter window. This suggests that Second Class may not actually be getting different handling than Standard, just a shorter promise on what looks like the same process.
 
+Ran a min/max check on scheduled vs. real days to see if the averages were hiding variation. Found that First Class shows zero variance in real shipping days. Every single order is exactly 2 days with no spread at all. Real operational data almost always has some natural variation (staffing, volume, weather), so I suspect this field may be synthetic or rounded rather than a genuine measurement. Confirmed by browsing individual First Class rows directly. They consistently showed 2, no exceptions.
 
 Noticed something that didn't add up. If First Class always shows scheduled = 1 and real = 2, every First Class order should be late, but the late rate was 95.3% and not 100%. I wanted to know why.
 
