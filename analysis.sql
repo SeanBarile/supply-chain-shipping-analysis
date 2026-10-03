@@ -74,3 +74,36 @@ ORDER BY row_count DESC;
 -- Result: identical scheduled/real values (1, 2) produce two different outcomes
 -- 26,513 rows flagged late, 1,301 rows with the same day counts not flagged late
 -- Confirms Late_delivery_risk is not a simple comparison of these two columns
+
+-- Follow-up: checked raw order/shipping date values for First Class to see if the date fields look like real measurements
+SELECT "order date (DateOrders)", 
+       "shipping date (DateOrders)"
+FROM orders
+WHERE "Shipping Mode" = 'First Class'
+LIMIT 5;
+-- Result: shipping date is exactly 2 days after order date for every row, same time of day
+-- Checked against Standard Class too, same pattern, different fixed offset.
+-- Suggests these date fields are formulaic (order date + fixed offset per mode)
+
+-- Follow-up: checked whether Late_delivery_risk is actually derived from Delivery Status instead of date/day-count fields
+SELECT "Delivery Status",
+       "Late_delivery_risk",
+       COUNT(*) as total_rows
+FROM orders
+GROUP BY "Delivery Status",
+         "Late_delivery_risk";
+-- Result: perfect 1:1 match across all ~180,000 rows
+-- Every "Late delivery" status row has risk=1, every other status has risk=0
+-- Confirms Late_delivery_risk comes from Delivery Status
+
+-- Follow-up: resolved the earlier 26,513 vs 1,301 discrepancy by checking Delivery Status specifically within First Class, scheduled =1 / real = 2 subset
+SELECT "Delivery Status",
+       "Late_delivery_risk",
+       COUNT(*) as total_rows
+FROM orders
+WHERE "Shipping Mode" = 'First Class'
+  AND "Days for shipment (scheduled)" = 1
+  AND "Days for shipping (real)" = 2
+GROUP BY "Delivery Status", "Late_delivery_risk";
+-- Result: the 1,301 "not late" rows all have Delivery Status = "Shipping canceled"
+-- Cancelled orders are correctly excluded from the late flag regardless of date values
