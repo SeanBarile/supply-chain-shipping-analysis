@@ -53,4 +53,4 @@ The shipping dates in this dataset appear to be artificially generated and not r
 ## Files
 
 - `analysis.sql` -- All queries used, including data-quality checks, in the order they were run.
-- `decisions_log.txt` -- Reasoning behind key choices and findings along the way.
+- `decisions_log.md` -- Reasoning behind key choices and findings along the way.
