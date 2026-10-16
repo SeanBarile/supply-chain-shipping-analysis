@@ -73,7 +73,7 @@ GROUP BY "Days for shipment (scheduled)",
 ORDER BY row_count DESC;
 -- Result: identical scheduled/real values (1, 2) produce two different outcomes
 -- 26,513 rows flagged late, 1,301 rows with the same day counts not flagged late
--- Confirms Late_delivery_risk is not a simple comparison of these two columns
+-- Split was later traced to cancelled orders
 
 -- Follow-up: checked raw order/shipping date values for First Class to see if the date fields look like real measurements
 SELECT "order date (DateOrders)", 
@@ -82,8 +82,7 @@ FROM orders
 WHERE "Shipping Mode" = 'First Class'
 LIMIT 5;
 -- Result: shipping date is exactly 2 days after order date for every row, same time of day
--- Checked against Standard Class too, same pattern, different fixed offset.
--- Suggests these date fields are formulaic (order date + fixed offset per mode)
+-- This is only a 5-row sample, see the distribution check below for complete picture
 
 -- Follow-up: checked whether Late_delivery_risk is actually derived from Delivery Status instead of date/day-count fields
 SELECT "Delivery Status",
@@ -106,4 +105,29 @@ WHERE "Shipping Mode" = 'First Class'
   AND "Days for shipping (real)" = 2
 GROUP BY "Delivery Status", "Late_delivery_risk";
 -- Result: the 1,301 "not late" rows all have Delivery Status = "Shipping canceled"
--- Cancelled orders are correctly excluded from the late flag regardless of date values
+-- Cancelled orders are correctly labeled canceled regardless of day counts
+
+-- Follow-up: checked the distribution of real shipping days across each shipping mode
+SELECT "Shipping Mode",
+			 "Days for shipping (real)",
+			 COUNT(*) as total_rows
+FROM orders
+GROUP BY "Shipping Mode", "Days for shipping (real)"
+ORDER BY "Shipping Mode";
+-- Result: First Class is always 2 days
+-- Same Day is about 50/50 with 0 or 1 day
+-- Second Class and Standard Class have an almost perfectly even spread across 2 to 6 days
+-- The data looks synthetic, but pattern is random inside a range for the other shipping modes
+
+-- Follow-up: for each Delivery Status, did the order take longer than scheduled?
+SELECT "Delivery Status",
+	     "Days for shipping (real)" > "Days for shipment (scheduled)" as took_longer_than_scheduled,
+	     COUNT(*) as total_rows
+FROM orders
+GROUP BY "Delivery Status", took_longer_than_scheduled;
+-- Result: Late delivery was always longer than scheduled
+-- Shipping on time was never
+-- Advance shipping was never
+-- Shipping canceled was sometimes yes and sometimes no
+-- For orders that actually shipped, Delivery Status is decided by whether or not real days exceed scheduled days
+-- Cancelled orders are the exception because they are labeled canceled regardless of the day counts
