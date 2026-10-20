@@ -29,3 +29,11 @@ Went back to the open question about why First Class wasn't 100% late despite al
 Since the dates look synthetic, I wanted to check whether Late_delivery_risk was actually coming from Delivery Status instead. Grouping the full dataset by both columns, I found a perfect match. Every "Late delivery" status row has risk=1, everything else has risk=0, no exceptions. This means the late flag isn't calculated from dates at all. It is directly translated from Delivery Status.
 
 I filtered the original 26,513 vs. 1,301 split from earlier specifically for Delivery Status within that subset. The 1,301 "not late" rows all turned out to be cancelled orders. This makes sense as cancelled orders never actually ship, so they wouldn't be marked as late regardless of what the date fields say. This fully resolves the earlier open question.
+
+In the entry above I wrote that Standard Class showed the same pattern. That came from running the order date and shipping date query on Standard Class, which only returned five rows (due to the LIMIT 5). That small slice made it look like each shipping mode has a fixed offset.
+
+I decided to check the distribution of real shipping days across each shipping mode. These results showed a different picture. First Class is always 2 days. Same Day is about 50/50 with 0 or 1 day. Second Class and Standard Class are spread across 2 to 6 days, in an almost perfectly even spread. So, while First Class may have a fixed offset, the other shipping modes seem to be random within a certain range.
+
+For orders that shipped, Delivery Status appears to be decided by whether the "Days for shipping (real)" exceeded "Days for shipment (scheduled)". Canceled orders are the exception, since they are labeled "Shipping canceled" even when they exceed the scheduled shipment day. That's why First Class is 95.3% late and not 100%. The 1,301 canceled orders count toward the First Class total, but their Delivery Status is "Shipping canceled" and their Late_delivery_risk is 0, so they aren't counted as late.
+
+This also changes my earlier conclusion that the late flag has nothing to do with the day counts. It appears to follow them, with canceled orders as the exception.
