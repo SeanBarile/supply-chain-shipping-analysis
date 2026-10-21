@@ -8,8 +8,8 @@ SELECT COUNT(*) - COUNT("order date (DateOrders)")
 FROM orders;
 -- Result: 0 nulls
 
--- Check for duplicate Order Ids
--- Confirmed this is expected: each row is an order item, not a full order
+-- Check for Order Ids appearing in multiple records
+-- Repeated IDs are expected because each row represents an order item
 SELECT "Order Id", COUNT(*)
 FROM orders
 GROUP BY "Order Id"
@@ -27,10 +27,10 @@ LIMIT 5;
 
 -- Main question: late delivery rate shipping mode
 SELECT "Shipping Mode",
-       AVG("Late_delivery_risk" * 100) as avg_late_delivery
+       AVG("Late_delivery_risk") * 100 as avg_late_delivery_pct
 FROM orders
 GROUP BY "Shipping Mode"
-ORDER BY avg_late_delivery DESC;
+ORDER BY avg_late_delivery_pct DESC;
 
 -- Follow-up: scheduled vs real shipping days, to test the hypothesis that faster shipping modes are held to tighter delivery windows
 SELECT "Shipping Mode",
@@ -84,7 +84,7 @@ LIMIT 5;
 -- Result: shipping date is exactly 2 days after order date for every row, same time of day
 -- This is only a 5-row sample, see the distribution check below for complete picture
 
--- Follow-up: checked whether Late_delivery_risk is actually derived from Delivery Status instead of date/day-count fields
+-- Check whether Late_delivery_risk and Delivery Status agree
 SELECT "Delivery Status",
        "Late_delivery_risk",
        COUNT(*) as total_rows
@@ -92,8 +92,8 @@ FROM orders
 GROUP BY "Delivery Status",
          "Late_delivery_risk";
 -- Result: perfect 1:1 match across all ~180,000 rows
--- Every "Late delivery" status row has risk=1, every other status has risk=0
--- Confirms Late_delivery_risk comes from Delivery Status
+-- Every "Late delivery" status has risk=1; all others have risk=0
+-- The fields are consistent, but their relationship's direction is unknown
 
 -- Follow-up: resolved the earlier 26,513 vs 1,301 discrepancy by checking Delivery Status specifically within First Class, scheduled =1 / real = 2 subset
 SELECT "Delivery Status",
@@ -104,8 +104,8 @@ WHERE "Shipping Mode" = 'First Class'
   AND "Days for shipment (scheduled)" = 1
   AND "Days for shipping (real)" = 2
 GROUP BY "Delivery Status", "Late_delivery_risk";
--- Result: the 1,301 "not late" rows all have Delivery Status = "Shipping canceled"
--- Cancelled orders are correctly labeled canceled regardless of day counts
+-- Result: all 1,301 rows not flagged late have Delivery Status = "Shipping canceled"
+-- Canceled records retain this status regardless of shipping-day counts
 
 -- Follow-up: checked the distribution of real shipping days across each shipping mode
 SELECT "Shipping Mode",
@@ -129,5 +129,5 @@ GROUP BY "Delivery Status", took_longer_than_scheduled;
 -- Shipping on time was never
 -- Advance shipping was never
 -- Shipping canceled was sometimes yes and sometimes no
--- For orders that actually shipped, Delivery Status is decided by whether or not real days exceed scheduled days
--- Cancelled orders are the exception because they are labeled canceled regardless of the day counts
+-- For non-canceled records, late-delivery status aligns with whether actual shipping days exceed scheduled days
+-- Canceled orders are the exception because they are labeled canceled regardless of the day counts
